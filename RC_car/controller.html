@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>RC Car Remote Controller</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+      touch-action: manipulation;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      letter-spacing: 2px;
+    }
+
+    .controller {
+      width: 320px;
+      height: 420px;
+      background: linear-gradient(145deg, #2c3e50, #1a2530);
+      border-radius: 40px;
+      padding: 30px;
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.6),
+        inset 0 10px 20px rgba(255,255,255,0.1);
+      position: relative;
+      border: 8px solid #111;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-areas:
+        ". up ."
+        "left center right"
+        ". down .";
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 15px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .btn {
+      background: linear-gradient(145deg, #34495e, #2c3e50);
+      border-radius: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 60px;
+      color: #ecf0f1;
+      user-select: none;
+      transition: all 0.1s ease;
+      box-shadow: 
+        0 10px 20px rgba(0,0,0,0.5),
+        inset 0 5px 10px rgba(255,255,255,0.1);
+    }
+
+    .btn:active {
+      transform: translateY(8px);
+      box-shadow: 
+        0 4px 8px rgba(0,0,0,0.6),
+        inset 0 5px 15px rgba(0,0,0,0.4);
+    }
+
+    .up    { grid-area: up; }
+    .down  { grid-area: down; }
+    .left  { grid-area: left; }
+    .right { grid-area: right; }
+    .center { 
+      grid-area: center;
+      background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .status {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 1.4em;
+      color: #00ff9d;
+      text-shadow: 0 0 10px #00ff9d;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .glow {
+      opacity: 1;
+    }
+
+    /* Extra visual flair */
+    .controller::before {
+      content: "";
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 15px;
+      background: #e74c3c;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #e74c3c;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>RC CAR CONTROLLER</h1>
+  <div class="status" id="status">FORWARD</div>
+
+  <div class="controller">
+    <div class="dpad">
+      <div class="btn up"    id="up">↑</div>
+      <div class="btn left"  id="left">←</div>
+      <div class="btn center">GO!</div>
+      <div class="btn right" id="right">→</div>
+      <div class="btn down"  id="down">↓</div>
+    </div>
+  </div>
+
+  <script>
+    const status = document.getElementById('status');
+    const buttons = {
+      up: document.getElementById('up'),
+      down: document.getElementById('down'),
+      left: document.getElementById('left'),
+      right: document.getElementById('right')
+    };
+
+    const commands = {
+      up: "FORWARD",
+      down: "BACKWARD",
+      left: "LEFT",
+      right: "RIGHT"
+    };
+
+    // Show current command
+    function showCommand(cmd) {
+      status.textContent = cmd;
+      status.classList.add('glow');
+      setTimeout(() => status.classList.remove('glow'), 300);
+    }
+
+    // Send command (you can replace console.log with WebSocket, HTTP, etc.)
+    function sendCommand(direction) {
+      const cmd = commands[direction];
+      showCommand(cmd);
+      console.log("RC Car Command →", cmd);
+
+      // Example: Send to your car via WebSocket
+      // websocket.send(JSON.stringify({action: direction}));
+
+      // Example: Send to ESP32/ESP8266 via HTTP
+      // fetch(`http://192.168.4.1/${direction}`);
+    }
+
+    // Mouse & Touch support
+    Object.keys(buttons).forEach(dir => {
+      const btn = buttons[dir];
+
+      // Mouse
+      btn.addEventListener('mousedown', () => sendCommand(dir));
+      btn.addEventListener('mouseup', () => showCommand("STOP"));
+      btn.addEventListener('mouseleave', () => showCommand("STOP"));
+
+      // Touch (mobile)
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        sendCommand(dir);
+      });
+      btn.addEventListener('touchend', () => showCommand("STOP"));
+    });
+
+    // Keyboard support (great for testing on PC)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'w') { sendCommand('up'); }
+      if (e.key === 'ArrowDown' || e.key === 's') { sendCommand('down'); }
+      if (e.key === 'ArrowLeft' || e.key === 'a') { sendCommand('left'); }
+      if (e.key === 'ArrowRight' || e.key === 'd') { sendCommand('right'); }
+    });
+
+    document.addEventListener('keyup', () => showCommand("STOP"));
+  </script>
+</body>
+</html>
